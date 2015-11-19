@@ -1,12 +1,16 @@
 package se.uu.farmbio.cp
 
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.Logging
-import java.io._
-import scala.io.Source
+import java.io.File
+import java.io.IOException
+import java.io.Serializable
 import java.nio.file.Files
 import java.nio.file.Paths
+
+import scala.io.Source
+
+import org.apache.spark.Logging
+import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.mllib.regression.LabeledPoint
 
 object ICPClassifierModel {
 

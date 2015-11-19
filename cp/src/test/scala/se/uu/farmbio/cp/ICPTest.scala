@@ -1,17 +1,16 @@
 package se.uu.farmbio.cp
 
-import scala.util.Random
 import org.apache.spark.SharedSparkContext
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.commons.io.FileUtils
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.junit.runner.RunWith
+import scala.util.Random
+import java.io.File
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import java.io.File
-import org.apache.commons.io.FileUtils
 
 private[cp] object ICPTest {
 

@@ -227,7 +227,8 @@ class ICPTest extends FunSuite with SharedSparkContext {
         val set = model.predict(p.features, sig)
         set == Set(1.0) && p.label == 1.0
       }.toDouble / test.count(_.label == 1.0)
-      (sig, efficiency, errorRate, recall)
+      val validity = sig <= errorRate
+      (sig, efficiency, errorRate, recall, validity)
     }
 
     val effBySig = effAndErrBySig.map(t => (t._1, t._2))
@@ -236,6 +237,8 @@ class ICPTest extends FunSuite with SharedSparkContext {
     assert(metrics.errorRateBySignificance sameElements errRateBySig)
     val recBySig = effAndErrBySig.map(t => (t._1, t._4))
     assert(metrics.recallBySignificance sameElements recBySig)
+    val valBySig = effAndErrBySig.map(t => (t._1, t._5))
+    assert(metrics.validityBySignificance sameElements recBySig)
 
   }
 

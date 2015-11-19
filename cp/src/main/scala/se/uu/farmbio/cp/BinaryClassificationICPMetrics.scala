@@ -60,7 +60,7 @@ class BinaryClassificationICPMetrics private (
   }
 
   //Compute all of the metrics at once
-  val metricsBySig = mondrianPvAndLabels
+  private val metricsBySig = mondrianPvAndLabels
     .flatMap {
       case (mPv, lab) =>
         //Apply filters to significances
@@ -89,28 +89,34 @@ class BinaryClassificationICPMetrics private (
         val efficiency = totSing.toDouble / n
         val errorRate = totErr.toDouble / n
         val recall = totTp.toDouble / group.count(_._5 == 1.0)
+        val validity = errorRate <= sig
         (sig,
           efficiency,
           errorRate,
-          recall)
+          recall,
+          validity)
     }
     .collect
     .sortBy(_._1)
 
   val significances = metricsBySig.map {
-    case (sig, eff, err, rec) => sig
+    case (sig, eff, err, rec, vldt) => sig
   }
 
   def errorRateBySignificance = metricsBySig.map {
-    case (sig, eff, err, rec) => (sig, err)
+    case (sig, eff, err, rec, vldt) => (sig, err)
   }
 
   def efficiencyBySignificance = metricsBySig.map {
-    case (sig, eff, err, rec) => (sig, eff)
+    case (sig, eff, err, rec, vldt) => (sig, eff)
   }
 
   def recallBySignificance = metricsBySig.map {
-    case (sig, eff, err, rec) => (sig, rec)
+    case (sig, eff, err, rec, vldt) => (sig, rec)
+  }
+  
+  def validityBySignificance = metricsBySig.map {
+    case (sig, eff, err, rec, vldt) => (sig, vldt)
   }
 
   override def toString =

@@ -60,7 +60,7 @@ class BinaryClassificationICPMetrics private (
   }
 
   //Compute all of the metrics at once
-  private val metricsBySig = mondrianPvAndLabels
+  val metricsBySig = mondrianPvAndLabels
     .flatMap {
       case (mPv, lab) =>
         //Apply filters to significances
@@ -86,13 +86,17 @@ class BinaryClassificationICPMetrics private (
         val (_, totSing, totErr, totTp, _) = group.reduce((t1, t2) =>
           (sig, t1._2 + t2._2, t1._3 + t2._3, t1._4 + t2._4, t1._5))
         val n = group.size
-        val tpPlusFn = group.count(_._5 == 1.0)
-        (sig, totSing.toDouble / n, totErr.toDouble / n,
-          totTp.toDouble / tpPlusFn)
+        val efficiency = totSing.toDouble / n
+        val errorRate = totErr.toDouble / n
+        val recall = totTp.toDouble / group.count(_._5 == 1.0)
+        (sig,
+          efficiency,
+          errorRate,
+          recall)
     }
     .collect
     .sortBy(_._1)
-    
+
   val significances = metricsBySig.map {
     case (sig, eff, err, rec) => sig
   }

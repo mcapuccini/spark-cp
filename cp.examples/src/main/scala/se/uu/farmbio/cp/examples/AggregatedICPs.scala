@@ -8,6 +8,7 @@ import se.uu.farmbio.cp.AggregatedICPClassifier
 import se.uu.farmbio.cp.BinaryClassificationICPMetrics
 import se.uu.farmbio.cp.ICP
 import scopt.OptionParser
+import se.uu.farmbio.cp.alg.GBT
 
 object AggregatedICPs {
 

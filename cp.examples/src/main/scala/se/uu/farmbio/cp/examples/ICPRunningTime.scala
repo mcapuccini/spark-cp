@@ -6,6 +6,7 @@ import org.apache.spark.SparkContext
 import se.uu.farmbio.cp.ICP
 import org.apache.spark.mllib.util.MLUtils
 import scopt.OptionParser
+import se.uu.farmbio.cp.alg.GBT
 
 object ICPRunningTime {
 

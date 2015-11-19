@@ -1,4 +1,4 @@
-package se.uu.farmbio.cp.examples
+package se.uu.farmbio.cp.alg
 
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.tree.GradientBoostedTrees

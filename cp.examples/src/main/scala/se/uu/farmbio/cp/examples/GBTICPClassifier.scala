@@ -3,10 +3,10 @@ package se.uu.farmbio.cp.examples
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.util.MLUtils
-
 import scopt.OptionParser
 import se.uu.farmbio.cp.BinaryClassificationICPMetrics
 import se.uu.farmbio.cp.ICP
+import se.uu.farmbio.cp.alg.GBT
 
 object GBTICPClassifier {
 

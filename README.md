@@ -26,7 +26,7 @@ Then, add the following entries into your pom.xml file:
 
 	<dependencies>
 	...
-			<groupId>se.uu.farmbio</groupId>
+		<groupId>se.uu.farmbio</groupId>
 			<artifactId>cp</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>

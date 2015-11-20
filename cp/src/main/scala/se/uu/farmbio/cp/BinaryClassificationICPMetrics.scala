@@ -118,6 +118,22 @@ class BinaryClassificationICPMetrics private (
   def validityBySignificance = metricsBySig.map {
     case (sig, eff, err, rec, vldt) => (sig, vldt)
   }
+  
+  def errorRateBySignificance(sig: Double): Double = {
+    errorRateBySignificance.filter(_._1 == sig)(0)._2
+  }
+  
+  def efficiencyBySignificance(sig: Double): Double = {
+    efficiencyBySignificance.filter(_._1 == sig)(0)._2
+  }
+  
+  def recallBySignificance(sig: Double): Double = {
+    recallBySignificance.filter(_._1 == sig)(0)._2
+  }
+  
+  def validityBySignificance(sig: Double): Boolean = {
+    validityBySignificance.filter(_._1 == sig)(0)._2
+  }
 
   override def toString =
     "significances : " +

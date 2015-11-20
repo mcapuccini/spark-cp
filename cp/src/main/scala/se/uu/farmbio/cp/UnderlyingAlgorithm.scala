@@ -17,6 +17,7 @@ abstract class UnderlyingAlgorithm(
 }
 
 abstract class UnderlyingAlgorithmSerializer[T <: UnderlyingAlgorithm] {
+  //To be implemented by the user
   def serialize(alg: T): String
   def deserialize(alg: String): T
 }

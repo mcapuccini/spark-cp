@@ -10,7 +10,7 @@ Conformal prediction is a mathematical framework that allows to assign valid con
 The nonconformity measure is the core of the the Conformal Predictor theory. It is a user-defined function which assigns a strangeness measure to new examples, with respect to the examples that were used in order to train a machine learning model. 
 
 ## Getting started 
-First you need to setup a Spark project with maven, this tutorial is a good starting point:
+First, you need to setup a Spark project with maven, this tutorial is a good starting point:
 [www.youtube.com/watch?v=aB4-RD_MMf0](www.youtube.com/watch?v=aB4-RD_MMf0).
 
 Then, add the following entries into your pom.xml file: 

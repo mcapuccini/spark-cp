@@ -5,7 +5,8 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
 abstract class UnderlyingAlgorithm(
-  private var model: (Vector => Double)) extends Serializable {
+  protected var model: (Vector => Double)) extends Serializable {
+  
   def this(input: RDD[LabeledPoint]) = {
     this(null.asInstanceOf[(Vector => Double)])
     model = trainingProcedure(input)

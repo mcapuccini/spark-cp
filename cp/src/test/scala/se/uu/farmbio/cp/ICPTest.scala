@@ -68,9 +68,9 @@ private[cp] object OneNNClassifier {
 
 //this will not work for big input RDDs, however this is just for testing purpose
 private[cp] class OneNNClassifier(
-    private var model: Vector => Double,
+    /*private var */private val prevModel: Vector => Double,
     val training: Array[LabeledPoint])
-  extends UnderlyingAlgorithm(model) {
+  extends UnderlyingAlgorithm(prevModel) {
   
   def this(input: RDD[LabeledPoint]) = {
     this(null.asInstanceOf[(Vector => Double)], input.collect)

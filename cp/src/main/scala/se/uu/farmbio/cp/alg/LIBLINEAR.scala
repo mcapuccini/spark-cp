@@ -145,43 +145,49 @@ object LIBLINEAR {
     return new AggregatedICPClassifier(icps.collect)
   }
   
+  /**
+   * takeFractions will take a List of any type and an Array with fractions wanted in
+   * each output-list. The fractions can be given in any "format", if 3 equally big lists
+   * are wanted you can specify fractions as Array(1.0,1.0,1.0), Array(100, 100, 100) or similar.
+   * When the list is not perfectly divisible by the fractions, remaining items will be added (one at a time)
+   * to the fractions in order of the fraction-size. 
+   * @param list			The list to be splitted into sub-lists
+   * @param fractions	The required fractions, no more than 10 allowed 
+   * @return 					An Array with sub-lists from the given list, the list will be randomized
+   */
   def takeFractions[T](list: List[T], fractions: Array[Double]): Array[List[T]] ={
-    if(fractions.length == 0){
-      return Array(list);
+    if(fractions.length <= 1){
+      return Array(Random.shuffle(list));
     }
+    if(fractions.length > 10){
+      throw new IllegalArgumentException("number of fractions are not allowed to be greater than 10");
+    }
+    else if(fractions.min <0){
+      throw new IllegalArgumentException("The fractions should all be equal or greater than 0");
+    }
+    else if(fractions.sum == 0){
+      throw new IllegalArgumentException("The sum of the fractions should be greater than 0"); 
+    }
+    
     val sumFractions = fractions.sum;
     val numRecords = list.size;
     var shuffData = Random.shuffle(list);
     
     var lists = fractions.map { frac => 
       val (currFraction, new_shuffData) = shuffData.splitAt((frac*numRecords/sumFractions).toInt); 
-      /*println(currFraction + ", " + new_shuffData);*/ 
-      shuffData=new_shuffData; currFraction }
+      shuffData=new_shuffData; 
+      currFraction 
+    }
     
-    assert(shuffData.size <= 1)
-    
-    // Give the last item to the biggest fraction (might be false??)
-    val biggestIndex = fractions.indexOf(fractions.min);
-    lists(biggestIndex) = lists(biggestIndex) ++ shuffData;
-    
+    // for the data left due to list not being perfectly divisible by the fractions
+    var fracs = fractions;
+    for (data <- shuffData){
+      val biggestIndex = fracs.indexOf(fracs.max);
+      fracs(biggestIndex) = fracs(biggestIndex)-100;
+      lists(biggestIndex) = data::lists(biggestIndex)
+    }
+
     lists
-    
   }
 
 }
-
-    
-    /*
-    //find smallest partition, and add it to that partition:
-    var index=List(0);
-    var currShortest = Int.MaxValue;
-    
-    for( i <- (0 to lists.length-1)) {
-      if(lists(i).size < currShortest){
-        currShortest = lists(i).size;
-        index = List(i);
-      }
-      else if(lists(i).size == currShortest){
-        index = i::index;
-      }
-    }*/

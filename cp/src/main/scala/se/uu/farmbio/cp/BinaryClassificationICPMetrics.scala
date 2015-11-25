@@ -2,10 +2,13 @@ package se.uu.farmbio.cp
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.Logging
 
-private object BinaryClassificationICPMetrics {
+private object BinaryClassificationICPMetrics extends Logging {
   def allSignificances(
     mondrianPvAndLabels: RDD[(Array[Double], Double)]) = {
+    logWarning("all possible significances will be considered. " +
+        "Make sure you know what you are doing.")
     mondrianPvAndLabels
       .flatMap(_._1)
       .filter(_ != 1).collect

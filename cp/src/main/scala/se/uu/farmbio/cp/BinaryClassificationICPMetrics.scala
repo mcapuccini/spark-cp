@@ -153,6 +153,7 @@ class BinaryClassificationICPMetrics private (
       this.recallBySignificance
       .map(_._2.toString)
       .reduce(_ + ", " + _) +
+      "\nvalidity      : " +
       this.validityBySignificance
       .map(_._2.toString)
       .reduce(_ + ", " + _)

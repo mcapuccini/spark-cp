@@ -118,37 +118,34 @@ object LIBLINEAR {
     Linear.train(problem, parameter)
 
   }
-
-  case class LibLinParams(
+  
+  def trainAggregatedClassifier(
+    trainingData: RDD[LabeledPoint],
     fractionalCalibration: Boolean = true,
     calibrationSize: Int = 16,
     calibrationFraction: Double = 0.2,
     numberOfICPs: Int = 10,
     solverType: SolverType = SolverType.L2R_L2LOSS_SVC_DUAL,
     regParam: Double = 1,
-    tol: Double = 0.01)
-
-  def trainAggregatedClassifier(
-    params: LibLinParams,
-    trainingData: RDD[LabeledPoint]): AggregatedICPClassifier[LibLinAlg] = {
+    tol: Double = 0.01): AggregatedICPClassifier[LibLinAlg] = {
 
     val sc = trainingData.context
     //Train icps
     val trainBroadcast = sc.broadcast(trainingData.collect)
-    val icps = sc.parallelize((1 to params.numberOfICPs)).map { _ =>
+    val icps = sc.parallelize((1 to numberOfICPs)).map { _ =>
       //Sample calibration
-      val (calibration, properTraining) = if (params.fractionalCalibration) {
-        takeFractionBinaryStratisfied(trainBroadcast.value, params.calibrationFraction)
+      val (calibration, properTraining) = if (fractionalCalibration) {
+        takeFractionBinaryStratisfied(trainBroadcast.value, calibrationFraction)
       } else {
-        takeAbsoluteBinaryStratisfied(trainBroadcast.value, params.calibrationSize)
+        takeAbsoluteBinaryStratisfied(trainBroadcast.value, calibrationSize)
       }
 
       //Train ICP
       val alg = new LibLinAlg(
         properTraining,
-        params.solverType,
-        params.regParam,
-        params.tol)
+        solverType,
+        regParam,
+        tol)
       ICP.trainClassifier(alg, numClasses = 2, calibration)
     }
 

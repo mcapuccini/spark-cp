@@ -9,7 +9,6 @@ import de.bwaldvogel.liblinear.SolverType
 import se.uu.farmbio.cp.ICP
 import se.uu.farmbio.cp.ICPClassifierModel
 import se.uu.farmbio.cp.ICPTest
-import se.uu.farmbio.cp.alg.LIBLINEAR.LibLinParams
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
@@ -107,10 +106,9 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
   }
 
   test("trainAggregatedClassifier") {
-    val params = new LibLinParams()
     val (test, training) = LIBLINEAR.takeFractionBinaryStratisfied(largeTestData, 0.2)
     val rddTraining = sc.parallelize(training)
-    val aggr = LIBLINEAR.trainAggregatedClassifier(params, rddTraining)
+    val aggr = LIBLINEAR.trainAggregatedClassifier(rddTraining)
 
     test.foreach { lp =>
       aggr.predict(lp.features, significance = 0.3)
@@ -127,7 +125,6 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
     val tmpDir = new File(s"$tmpBase/icptest${System.currentTimeMillis}")
     tmpDir.mkdir
 
-    val params = new LibLinParams()
     val Array(test, calib, propTraining) =
       LIBLINEAR.takeFractions(largeTestData.toList, Array(0.2, 0.2, .6))
     val alg = new LibLinAlg(propTraining.toArray,

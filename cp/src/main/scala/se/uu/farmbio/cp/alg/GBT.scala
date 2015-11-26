@@ -1,10 +1,10 @@
 package se.uu.farmbio.cp.alg
 
+import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.tree.GradientBoostedTrees
 import org.apache.spark.mllib.tree.configuration.BoostingStrategy
 import org.apache.spark.mllib.tree.loss.LogLoss
-import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import se.uu.farmbio.cp.UnderlyingAlgorithm

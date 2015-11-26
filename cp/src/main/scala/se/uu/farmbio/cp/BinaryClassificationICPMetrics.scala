@@ -1,8 +1,8 @@
 package se.uu.farmbio.cp
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
 
 private object BinaryClassificationICPMetrics extends Logging {
   def allSignificances(

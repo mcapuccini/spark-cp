@@ -1,20 +1,18 @@
 package se.uu.farmbio.cp.alg
 
-import org.apache.spark.SharedSparkContext
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
-import se.uu.farmbio.cp.ICPTest
+import java.io.File
 import scala.util.Random
 import org.apache.commons.io.FileUtils
-import se.uu.farmbio.cp.ICP
-import de.bwaldvogel.liblinear.SolverType
-import se.uu.farmbio.cp.ICPClassifierModel
-import java.io.File
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import se.uu.farmbio.cp.BinaryClassificationICPMetrics
+import org.apache.spark.SharedSparkContext
 import org.apache.spark.mllib.classification.SVMSuite
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import de.bwaldvogel.liblinear.SolverType
+import se.uu.farmbio.cp.BinaryClassificationICPMetrics
+import se.uu.farmbio.cp.ICP
+import se.uu.farmbio.cp.ICPClassifierModel
+import se.uu.farmbio.cp.ICPTest
+import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class LibLinearTest extends FunSuite with SharedSparkContext {

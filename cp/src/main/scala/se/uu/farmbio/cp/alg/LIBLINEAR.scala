@@ -20,42 +20,16 @@ import se.uu.farmbio.cp.UnderlyingAlgorithm
 import se.uu.farmbio.cp.UnderlyingAlgorithmSerializer
 
 class LibLinAlg(
-  private var svmModel: SVMModel,
-  private var predModel: (Vector => Double))
-  extends UnderlyingAlgorithm(predModel) { //null.asInstanceOf[RDD[LabeledPoint]]) {
+  val svmModel: SVMModel)
+  extends UnderlyingAlgorithm(
+    (features: Vector) => svmModel.predict(features)) {
 
-  private var solverType: SolverType = _
-  private var regParam: Double = _
-  private var tol: Double = _
-  private var training: Array[LabeledPoint] = _
-
-  def this(training: Array[LabeledPoint],
-           solverType: SolverType,
-           regParam: Double,
-           tol: Double) {
-    this(null, null) //.asInstanceOf[SVMModel]
-    this.solverType = solverType
-    this.regParam = regParam
-    this.tol = tol
-    this.training = training
-    model = trainingProcedure(null.asInstanceOf[RDD[LabeledPoint]])
-  }
-
-  //getter for the svm-model (used for serialization)
-  def getSVMModel = if (svmModel != null) {
-    svmModel
-  } else {
-    throw new IllegalAccessException("Illegal access of model (not been created yet)")
-  }
-
-  override def trainingProcedure(nullRdd: RDD[LabeledPoint]) = {
-    val liblinModel = LIBLINEAR.train(training, solverType, regParam, tol)
-    training = null // No need to store the training-examples any more
-    val weights = liblinModel.getFeatureWeights
-    svmModel = new SVMModel(Vectors.dense(weights).toSparse, 0.0)
-    svmModel.clearThreshold
-    model = svmModel.predict
-    model
+  def this(
+    training: Array[LabeledPoint],
+    solverType: SolverType,
+    regParam: Double,
+    tol: Double) = {
+    this(LIBLINEAR.train(training, solverType, regParam, tol))
   }
 
   override def nonConformityMeasure(newSample: LabeledPoint) = {
@@ -71,8 +45,8 @@ class LibLinAlg(
 
 object LibLinAlgSerializer extends UnderlyingAlgorithmSerializer[LibLinAlg] {
   override def serialize(alg: LibLinAlg): String = {
-    alg.getSVMModel.intercept + "\n" +
-      alg.getSVMModel.weights.toArray.map(_.toString).reduce(_ + "\n" + _)
+    alg.svmModel.intercept + "\n" +
+      alg.svmModel.weights.toArray.map(_.toString).reduce(_ + "\n" + _)
   }
   override def deserialize(modelString: String): LibLinAlg = {
     val rowSplitted = modelString.split("\n").map(_.toDouble)
@@ -80,12 +54,12 @@ object LibLinAlgSerializer extends UnderlyingAlgorithmSerializer[LibLinAlg] {
     val weights = rowSplitted.tail
     val model = new SVMModel(Vectors.dense(weights), intercept)
     model.clearThreshold()
-    new LibLinAlg(model, model.predict)
+    new LibLinAlg(model)
   }
 }
 
 object LIBLINEAR {
-  def vectorToFeatures(v: Vector) = {
+  private[alg] def vectorToFeatures(v: Vector) = {
     val indices = v.toSparse.indices
     val values = v.toSparse.values
     indices
@@ -99,10 +73,11 @@ object LIBLINEAR {
       }
   }
 
-  def train(input: Array[LabeledPoint],
-            solverType: SolverType,
-            c: Double,
-            tol: Double) = {
+  private[alg] def train(
+    input: Array[LabeledPoint],
+    solverType: SolverType,
+    c: Double,
+    tol: Double) = {
 
     //configure problem
     val problem = new Problem
@@ -114,32 +89,72 @@ object LIBLINEAR {
     problem.y = input.map(_.label + 1.0)
     problem.bias = -1.0
 
+    //train
     val parameter = new Parameter(solverType, c, tol)
-    Linear.train(problem, parameter)
+    val libLinModel = Linear.train(problem, parameter)
+
+    //convert to Spark SVMModel
+    val weights = libLinModel.getFeatureWeights
+    val svmModel = new SVMModel(Vectors.dense(weights).toSparse, 0.0)
+    svmModel.clearThreshold
+    svmModel
 
   }
-  
-  def trainAggregatedClassifier(
+
+  private[alg] def calibrationSplit(
+    trainingData: Array[LabeledPoint],
+    calibrationSizeP: Int,
+    calibrationSizeN: Int) = {
+    val shuffData = Random.shuffle(trainingData.toList)
+    val positives = shuffData.filter { p => p.label == 1.0 }
+    val negatives = shuffData.filter { p => p.label != 1.0 }
+    val calibration = (
+      positives.take(calibrationSizeP) ++
+      negatives.take(calibrationSizeN))
+      .toArray
+    val properTraining = (
+      positives.takeRight(positives.length - calibrationSizeP) ++
+      negatives.takeRight(negatives.length - calibrationSizeN))
+      .toArray
+    (properTraining, calibration)
+  }
+
+  private[alg] def splitFractional(
+    trainingData: Array[LabeledPoint],
+    calibrationFraction: Double) = {
+    val calibrationSizeP = (trainingData.count(_.label == 1.0) * calibrationFraction).toInt
+    val calibrationSizeN = (trainingData.count(_.label != 1.0) * calibrationFraction).toInt
+    calibrationSplit(trainingData, calibrationSizeP, calibrationSizeN)
+  }
+
+  private[alg] def splitBalanced(
+    trainingData: Array[LabeledPoint],
+    calibrationSize: Int) = {
+    calibrationSplit(trainingData, calibrationSize, calibrationSize)
+  }
+
+  def trainBinaryAggregatedClassifier(
     trainingData: RDD[LabeledPoint],
-    fractionalCalibration: Boolean = true,
-    calibrationSize: Int = 16,
     calibrationFraction: Double = 0.2,
     numberOfICPs: Int = 10,
     solverType: SolverType = SolverType.L2R_L2LOSS_SVC_DUAL,
     regParam: Double = 1,
-    tol: Double = 0.01): AggregatedICPClassifier[LibLinAlg] = {
+    tol: Double = 0.01,
+    balancedCalibration: Boolean = true,
+    calibrationSize: Int = 16): AggregatedICPClassifier[LibLinAlg] = {
 
+    //Broadcast the dataset
     val sc = trainingData.context
-    //Train icps
     val trainBroadcast = sc.broadcast(trainingData.collect)
+
+    //Train ICPs for different calibration samples
     val icps = sc.parallelize((1 to numberOfICPs)).map { _ =>
       //Sample calibration
-      val (calibration, properTraining) = if (fractionalCalibration) {
-        takeFractionBinaryStratisfied(trainBroadcast.value, calibrationFraction)
+      val (properTraining, calibration) = if (balancedCalibration) {
+        splitBalanced(trainBroadcast.value, calibrationSize)
       } else {
-        takeAbsoluteBinaryStratisfied(trainBroadcast.value, calibrationSize)
+        splitFractional(trainBroadcast.value, calibrationFraction)
       }
-
       //Train ICP
       val alg = new LibLinAlg(
         properTraining,
@@ -150,130 +165,7 @@ object LIBLINEAR {
     }
 
     //Aggregate ICPs 
-    return new AggregatedICPClassifier(icps.collect)
-  }
-
-  /**
-   * takeAbsolute takes absolute numbers of elements from
-   * a list and return all remaining elements
-   * as a last index in the output Array. The given
-   * output array with lists will have one more index
-   * compared to the numToTake-input array.
-   * @param list
-   */
-  private[alg] def takeAbsolute[T](
-    list: List[T],
-    numToTake: Array[Int]): Array[List[T]] = {
-    if (numToTake.sum > list.length) {
-      throw new IllegalArgumentException(
-        "specified number to take is too large compared to the size of the list")
-    }
-    val listSize = list.length
-    var shuffData = Random.shuffle(list)
-    var lists: Array[List[T]] = numToTake.map { n =>
-      val data = shuffData.take(n)
-      shuffData = shuffData.takeRight(shuffData.length - n)
-      data
-    }
-    lists = lists ++ Array(shuffData)
-    lists
-
-  }
-
-  /**
-   * takeFractions will take a List of any type and an Array with fractions wanted in
-   * each output-list. The fractions can be given in any "format", if 3 equally big lists
-   * are wanted you can specify fractions as Array(1.0,1.0,1.0), Array(100, 100, 100) or similar.
-   * When the list is not perfectly divisible by the fractions,
-   * remaining items will be added (one at a time)
-   * to the fractions in order of the fraction-size.
-   * @param list			The list to be splitted into sub-lists
-   * @param fractions	The required fractions, no more than 10 allowed
-   * @return 					An Array with sub-lists from the given list, the list will be randomized
-   */
-  private[alg] def takeFractions[T](
-    list: List[T],
-    fractions: Array[Double]): Array[List[T]] = {
-    if (fractions.length <= 1) {
-      return Array(Random.shuffle(list))
-    }
-    if (fractions.length > 10) {
-      throw new IllegalArgumentException(
-        "number of fractions are not allowed to be greater than 10")
-    }
-    if (fractions.min < 0) {
-      throw new IllegalArgumentException(
-        "The fractions should all be equal or greater than 0")
-    }
-    if (fractions.sum == 0) {
-      throw new IllegalArgumentException(
-        "The sum of the fractions should be greater than 0")
-    }
-
-    val sumFractions = fractions.sum
-    val numRecords = list.size
-    var shuffData = Random.shuffle(list)
-
-    var lists = fractions.map { frac =>
-      val (currFraction, newShuffData) =
-        shuffData.splitAt((frac * numRecords / sumFractions).toInt)
-      shuffData = newShuffData
-      currFraction
-    }
-
-    // for the data left due to list not being perfectly divisible by the fractions
-    var fracs = fractions
-    for (data <- shuffData) {
-      val biggestIndex = fracs.indexOf(fracs.max)
-      fracs(biggestIndex) = fracs(biggestIndex) - 100
-      lists(biggestIndex) = data :: lists(biggestIndex)
-    }
-
-    lists
-  }
-
-  /**
-   * takeFractionBinaryStratisfied splits your data based
-   * on the two outputs of your data (label == 1.0 or label != 1.0),
-   * the splits will be made according to the calibrationFraction
-   * specified and in stratisfied fashion.
-   */
-  def takeFractionBinaryStratisfied(
-    data: Array[LabeledPoint],
-    calibrationFraction: Double): (Array[LabeledPoint], Array[LabeledPoint]) = {
-    if (calibrationFraction > 1 || calibrationFraction < 0) {
-      throw new IllegalArgumentException("The calibrationFraction must be between 0 and 1")
-    }
-
-    val positives = data.filter { p => p.label == 1.0 }.toList
-    val negatives = data.filter { p => p.label != 1.0 }.toList
-    val Array(posCalib, posProper) =
-      takeFractions(positives, Array(calibrationFraction, 1 - calibrationFraction))
-    val Array(negCalib, negProper) =
-      takeFractions(negatives, Array(calibrationFraction, 1 - calibrationFraction))
-
-    ((posCalib ++ negCalib).toArray, (posProper ++ negProper).toArray)
-  }
-
-  /**
-   * takeFractionBinaryStratisfied splits your data based
-   * on the two outputs of your data (label == 1.0 or label != 1.0),
-   * the splits will be made according to the calibrationFraction
-   * specified and in stratisfied fashion.
-   */
-  def takeAbsoluteBinaryStratisfied(
-    data: Array[LabeledPoint],
-    calibrationSize: Int): (Array[LabeledPoint], Array[LabeledPoint]) = {
-    if (calibrationSize > data.length) {
-      throw new IllegalArgumentException(
-        "The calibrationSize is set to be larger than the data-size")
-    }
-    val positives = data.filter { p => p.label == 1.0 }.toList
-    val negatives = data.filter { p => p.label != 1.0 }.toList
-    val Array(posCalib, posProper) = takeAbsolute(positives, Array(calibrationSize))
-    val Array(negCalib, negProper) = takeAbsolute(negatives, Array(calibrationSize))
-
-    ((posCalib ++ negCalib).toArray, (posProper ++ negProper).toArray)
+    new AggregatedICPClassifier(icps.collect)
   }
 
 }

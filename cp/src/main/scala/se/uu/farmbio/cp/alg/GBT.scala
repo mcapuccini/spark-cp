@@ -4,17 +4,16 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.tree.GradientBoostedTrees
 import org.apache.spark.mllib.tree.configuration.BoostingStrategy
 import org.apache.spark.mllib.tree.loss.LogLoss
+import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import se.uu.farmbio.cp.UnderlyingAlgorithm
 
 //Define a GBTs UnderlyingAlgorithm
-class GBT(
-  private val input: RDD[LabeledPoint],
-  private val numIterations: Int)
-  extends UnderlyingAlgorithm(input) {
-
-  override def trainingProcedure(input: RDD[LabeledPoint]) = {
+object GBT {
+  def trainingProcedure(
+      input: RDD[LabeledPoint], 
+      numIterations: Int): (Vector => Double) = {
     //Configuration
     val boostingStrategy = BoostingStrategy.defaultParams("Regression")
     boostingStrategy.numIterations = numIterations
@@ -27,7 +26,13 @@ class GBT(
       .run(input = remappedInput)
     model.predict
   }
+}
 
+class GBT(
+  private val input: RDD[LabeledPoint],
+  private val numIterations: Int)
+  extends UnderlyingAlgorithm(
+      GBT.trainingProcedure(input,numIterations)) {
   override def nonConformityMeasure(newSample: LabeledPoint) = {
     val score = predictor(newSample.features)
     if (newSample.label == 1.0) {

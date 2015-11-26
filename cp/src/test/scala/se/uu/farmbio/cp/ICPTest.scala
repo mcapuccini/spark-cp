@@ -68,17 +68,12 @@ private[cp] object OneNNClassifier {
 
 //this will not work for big input RDDs, however this is just for testing purpose
 private[cp] class OneNNClassifier(
-    /*private var */private val prevModel: Vector => Double,
+    val model: Vector => Double,
     val training: Array[LabeledPoint])
-  extends UnderlyingAlgorithm(prevModel) {
+  extends UnderlyingAlgorithm(model) {
   
   def this(input: RDD[LabeledPoint]) = {
-    this(null.asInstanceOf[(Vector => Double)], input.collect)
-    model = trainingProcedure(input)
-  }
-
-  override protected def trainingProcedure(input: RDD[LabeledPoint]) = {
-    OneNNClassifier.createModel(training)
+    this(OneNNClassifier.createModel(input.collect), input.collect)
   }
 
   override def nonConformityMeasure(newSample: LabeledPoint) = {

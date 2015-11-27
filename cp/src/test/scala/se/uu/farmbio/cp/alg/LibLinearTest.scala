@@ -8,12 +8,10 @@ import org.apache.spark.mllib.classification.SVMSuite
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import de.bwaldvogel.liblinear.SolverType
-import se.uu.farmbio.cp.BinaryClassificationICPMetrics
 import se.uu.farmbio.cp.ICP
 import se.uu.farmbio.cp.ICPClassifierModel
-import se.uu.farmbio.cp.ICPTest
+import se.uu.farmbio.cp.TestUtils
 import org.scalatest.junit.JUnitRunner
-import org.apache.spark.mllib.util.MLUtils
 
 @RunWith(classOf[JUnitRunner])
 class LibLinearTest extends FunSuite with SharedSparkContext {
@@ -67,7 +65,7 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
   test("test private utilities") {
 
     //Generate test
-    val points = ICPTest.generateBinaryData(100, Random.nextInt).toArray
+    val points = TestUtils.generateBinaryData(100, Random.nextInt).toArray
 
     //Calibration split
     val calibrationSizeP = 10

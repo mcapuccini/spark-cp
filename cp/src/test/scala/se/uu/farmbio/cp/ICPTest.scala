@@ -12,51 +12,6 @@ import java.io.File
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
-private[cp] object ICPTest {
-
-  def generate4ClassesData(instances: Int, seed: Long): Seq[LabeledPoint] = {
-    val rnd = new Random(seed)
-    Seq.fill(instances)((rnd.nextInt(100), rnd.nextInt(100))).map(r => {
-      val label = if (r._1 < 50 && r._2 < 50) {
-        0.0
-      } else if (r._1 < 50) {
-        1.0
-      } else if (r._2 < 50) {
-        2.0
-      } else {
-        3.0
-      }
-      new LabeledPoint(label, Vectors.dense(Array(r._1.toDouble, r._2.toDouble)))
-    })
-  }
-
-  def generate4ClassesTrainCalibTest(significance: Double) = {
-    val numClasses = 4
-    val calibSamples = 4 * numClasses * (1 / significance - 1).ceil.toInt //4 times the minimum
-    val training = ICPTest.generate4ClassesData(instances = 80,
-      seed = Random.nextLong)
-    val test = ICPTest.generate4ClassesData(instances = 20,
-      seed = Random.nextLong)
-    val calibration = ICPTest.generate4ClassesData(instances = calibSamples,
-      seed = Random.nextLong)
-      .toArray
-    (training, calibration, test)
-  }
-
-  def generateBinaryData(instances: Int, seed: Long): Seq[LabeledPoint] = {
-    val rnd = new Random(seed)
-    Seq.fill(instances)(rnd.nextInt(100)).map(r => {
-      val label = if (r < 50) {
-        0.0
-      } else {
-        1.0
-      }
-      new LabeledPoint(label, Vectors.dense(r))
-    })
-  }
-
-}
-
 private[cp] object OneNNClassifier {
   def createModel(training: Array[LabeledPoint]) = (features: Vector) => {
     val classAndDist = training.map(point =>
@@ -124,7 +79,7 @@ class ICPTest extends FunSuite with SharedSparkContext {
 
     val significance = 0.20
     val errFracts = (0 to 100).map { _ =>
-      val (training, calibration, test) = ICPTest.generate4ClassesTrainCalibTest(significance)
+      val (training, calibration, test) = TestUtils.generate4ClassesTrainCalibTest(significance)
       val alg = new OneNNClassifier(sc.parallelize(training))
       val model = ICP.trainClassifier(alg, numClasses = 4, calibration)
       //compute error fraction
@@ -158,10 +113,10 @@ class ICPTest extends FunSuite with SharedSparkContext {
   test("aggregated ICPs classification") {
 
     val significance = 0.20
-    val test = ICPTest.generate4ClassesData(instances = 20,
+    val test = TestUtils.generate4ClassesData(instances = 20,
       seed = Random.nextLong)
     val icps = (0 to 100).map { _ =>
-      val (training, calibration, _) = ICPTest.generate4ClassesTrainCalibTest(significance)
+      val (training, calibration, _) = TestUtils.generate4ClassesTrainCalibTest(significance)
       val alg = new OneNNClassifier(sc.parallelize(training))
       ICP.trainClassifier(alg, numClasses = 4, calibration)
     }
@@ -200,7 +155,7 @@ class ICPTest extends FunSuite with SharedSparkContext {
 
     val Seq(training, calibration, test) =
       Seq(100, 10, 20).map { instances =>
-        ICPTest.generateBinaryData(instances, Random.nextInt)
+        TestUtils.generateBinaryData(instances, Random.nextInt)
       }
 
     val alg = new OneNNClassifier(sc.parallelize(training))
@@ -246,7 +201,7 @@ class ICPTest extends FunSuite with SharedSparkContext {
     
     //Create some test data
     val significance = 0.2
-    val (training, calibration, test) = ICPTest.generate4ClassesTrainCalibTest(significance)
+    val (training, calibration, test) = TestUtils.generate4ClassesTrainCalibTest(significance)
     val alg = new OneNNClassifier(sc.parallelize(training))
     val model = ICP.trainClassifier(alg, numClasses = 4, calibration)
     
@@ -274,10 +229,10 @@ class ICPTest extends FunSuite with SharedSparkContext {
     
     //Create some test data
     val significance = 0.20
-    val test = ICPTest.generate4ClassesData(instances = 20,
+    val test = TestUtils.generate4ClassesData(instances = 20,
       seed = Random.nextLong)
     val icps = (0 to 100).map { _ =>
-      val (training, calibration, _) = ICPTest.generate4ClassesTrainCalibTest(significance)
+      val (training, calibration, _) = TestUtils.generate4ClassesTrainCalibTest(significance)
       val alg = new OneNNClassifier(sc.parallelize(training))
       ICP.trainClassifier(alg, numClasses = 4, calibration)
     }

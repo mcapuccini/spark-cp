@@ -13,6 +13,7 @@ import se.uu.farmbio.cp.ICP
 import se.uu.farmbio.cp.ICPClassifierModel
 import se.uu.farmbio.cp.ICPTest
 import org.scalatest.junit.JUnitRunner
+import org.apache.spark.mllib.util.MLUtils
 
 @RunWith(classOf[JUnitRunner])
 class LibLinearTest extends FunSuite with SharedSparkContext {
@@ -20,20 +21,20 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
   Random.setSeed(11)
 
   //Generate some test data
-  val intercept=0.0 
-  val weights=Array(3.0,2.0)
-  val propTraining = SVMSuite.generateSVMInput(intercept, weights, 80, Random.nextInt)
+  val intercept = 0.0
+  val weights = Array(1.0, 1.0)
+  val training = SVMSuite.generateSVMInput(intercept, weights, 80, Random.nextInt)
   val calib = SVMSuite.generateSVMInput(intercept, weights, 20, Random.nextInt)
   val test = SVMSuite.generateSVMInput(intercept, weights, 30, Random.nextInt)
 
-  //Train
-  val alg = new LibLinAlg(propTraining.toArray,
-    SolverType.L2R_L2LOSS_SVC_DUAL,
-    regParam = 1.0,
-    tol = 0.01)
-  val model = ICP.trainClassifier(alg, numClasses = 2, calib.toArray)
-
   test("save/load LibLinAlg") {
+    
+    //Train
+    val alg = new LibLinAlg(training.toArray,
+      SolverType.L2R_L2LOSS_SVC_DUAL,
+      regParam = 1.0,
+      tol = 0.01)
+    val model = ICP.trainClassifier(alg, numClasses = 2, calib.toArray)
 
     //Create tmpdir
     val tmpBase = FileUtils.getTempDirectory.getAbsolutePath
@@ -68,6 +69,14 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
     //Generate test
     val points = ICPTest.generateBinaryData(100, Random.nextInt).toArray
 
+    //Calibration split
+    val calibrationSizeP = 10
+    val calibrationSizeN = 20
+    val (proper, cali) = LIBLINEAR.calibrationSplit(points, calibrationSizeP, calibrationSizeN)
+    assert(cali.filter(_.label == 1.0).size == calibrationSizeP)
+    assert(cali.filter(_.label == 0.0).size == calibrationSizeN)
+    assert((cali ++ proper).toSet sameElements points.toSet)
+
     //Balanced split
     val calibrationSize = 10
     val (properBal, caliBal) = LIBLINEAR.splitBalanced(points, calibrationSize)
@@ -86,14 +95,33 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
 
   }
 
-  test("test performance") {
-    val sig = 0.2
-    val pvAndLab = sc.parallelize(test.map { p =>
-      (model.mondrianPv(p.features), p.label)
-    })
-    val metrics = new BinaryClassificationICPMetrics(pvAndLab, Array(sig))
-    assert(metrics.efficiencyBySignificance(sig) >= 0.6)
-    assert(metrics.recallBySignificance(sig) >= 0.6)
+  test("test performance, ignore split, no aggregation") {
+    
+    //Train
+    val alg = new LibLinAlg(training.toArray,
+      SolverType.L2R_L2LOSS_SVC_DUAL,
+      regParam = 1.0,
+      tol = 0.01)
+    val model = ICP.trainClassifier(alg, numClasses = 2, calib.toArray)
+    
+    assert(TestUtils.testPerformance(model, sc.parallelize(test)))
+  
+  }
+  
+  test("test performance, balanced split") {
+    
+    val model = LIBLINEAR.trainBinaryAggregatedClassifier(
+        sc.parallelize(training), balancedCalibration=true, calibrationSize=16)
+    assert(TestUtils.testPerformance(model, sc.parallelize(test)))
+    
+  }
+  
+  test("test performance, fractional split") {
+    
+    val model = LIBLINEAR.trainBinaryAggregatedClassifier(
+        sc.parallelize(training), calibrationFraction=0.1)  
+    assert(TestUtils.testPerformance(model, sc.parallelize(test)))
+    
   }
 
 }

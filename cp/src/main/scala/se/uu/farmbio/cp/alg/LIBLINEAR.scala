@@ -140,7 +140,7 @@ object LIBLINEAR {
     solverType: SolverType = SolverType.L2R_L2LOSS_SVC_DUAL,
     regParam: Double = 1,
     tol: Double = 0.01,
-    balancedCalibration: Boolean = true,
+    balancedCalibration: Boolean = false,
     calibrationSize: Int = 16): AggregatedICPClassifier[LibLinAlg] = {
 
     //Broadcast the dataset

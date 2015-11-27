@@ -156,17 +156,6 @@ object LIBLINEAR {
       } else {
         splitFractional(trainBroadcast.value, calibrationFraction)
       }
-      //      val shuffData = Random.shuffle(trainBroadcast.value.toList)
-      //      val positives = shuffData.filter { p => p.label == 1.0 }
-      //      val negatives = shuffData.filter { p => p.label != 1.0 }
-      //      val calibration = (
-      //        positives.take(calibrationSize) ++
-      //        negatives.take(calibrationSize))
-      //        .toArray
-      //      val properTraining = (
-      //        negatives.takeRight(negatives.length - calibrationSize) ++
-      //        positives.takeRight(positives.length - calibrationSize))
-      //        .toArray
       //Train ICP
       val alg = new LibLinAlg(
         properTraining,

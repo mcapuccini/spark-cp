@@ -13,7 +13,7 @@ import org.apache.spark.rdd.RDD
 import se.uu.farmbio.cp.UnderlyingAlgorithm
 
 //Define a SVMs UnderlyingAlgorithm
-object SVM {
+private object SVM {
   def trainingProcedure(
     input: RDD[LabeledPoint],
     maxNumItearations: Int,

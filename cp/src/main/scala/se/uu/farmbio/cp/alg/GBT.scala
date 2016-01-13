@@ -10,7 +10,7 @@ import org.apache.spark.rdd.RDD
 import se.uu.farmbio.cp.UnderlyingAlgorithm
 
 //Define a GBTs UnderlyingAlgorithm
-object GBT {
+private object GBT {
   def trainingProcedure(
       input: RDD[LabeledPoint], 
       numIterations: Int): (Vector => Double) = {

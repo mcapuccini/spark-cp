@@ -16,7 +16,7 @@ private object BinaryClassificationICPMetrics extends Logging {
 }
 
 class BinaryClassificationICPMetrics private (
-  private val mondrianPvAndLabels: RDD[(Array[Double], Double)],
+  val mondrianPvAndLabels: RDD[(Array[Double], Double)],
   private val sigLowerBound: Double,
   private val sigUpperBound: Double,
   val sigBcast: Broadcast[Array[Double]]) extends Serializable {

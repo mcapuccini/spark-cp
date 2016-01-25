@@ -46,13 +46,13 @@ class LibLinAlg(
 object LibLinAlgSerializer extends UnderlyingAlgorithmSerializer[LibLinAlg] {
   override def serialize(alg: LibLinAlg): String = {
     alg.svmModel.intercept + "\n" +
-      alg.svmModel.weights.toArray.map(_.toString).reduce(_ + "\n" + _)
+      alg.svmModel.weights.toString
   }
   override def deserialize(modelString: String): LibLinAlg = {
-    val rowSplitted = modelString.split("\n").map(_.toDouble)
-    val intercept = rowSplitted.head
-    val weights = rowSplitted.tail
-    val model = new SVMModel(Vectors.dense(weights), intercept)
+    val rowSplitted = modelString.split("\n")
+    val intercept = rowSplitted(0)
+    val weights = rowSplitted(1)
+    val model = new SVMModel(Vectors.parse(weights).toSparse, intercept.toDouble)
     model.clearThreshold()
     new LibLinAlg(model)
   }

@@ -98,7 +98,7 @@ class ICPTest extends FunSuite with SharedSparkContext {
   test("calibration and training split") {
 
     val input = (1 to 100).map(i => new LabeledPoint(i, Vectors.dense(i)))
-    val (calibration, trainingRDD) = ICP.splitCalibrationAndTraining(sc.parallelize(input), 30)
+    val (calibration, trainingRDD) = ICP.calibrationSplit(sc.parallelize(input), 30)
     val training = trainingRDD.collect
     val concat = calibration ++ training
     assert(calibration.length == 30)
@@ -127,27 +127,6 @@ class ICPTest extends FunSuite with SharedSparkContext {
     }
     val meanError = errors.toDouble / test.length.toDouble
     assert(meanError <= significance)
-
-  }
-
-  test("fair calibration and training split") {
-
-    val input = (1 to 50).map(i => new LabeledPoint(0.0, Vectors.dense(i))) ++
-      (51 to 100).map(i => new LabeledPoint(1.0, Vectors.dense(i)))
-    val (calibration, trainingRDD) = ICP.splitCalibrationAndTraining(
-      sc.parallelize(input), 15, bothClasses = true)
-    val training = trainingRDD.collect
-    val concat = calibration ++ training
-    val count0 = calibration.count(_.label == 0.0)
-    val count1 = calibration.count(_.label == 1.0)
-    assert(count0 == 15)
-    assert(count1 == 15)
-    assert(calibration.length == 30)
-    assert(training.length == 70)
-    assert(concat.length == 100)
-    concat.sortBy(_.features(0)).zip(input).foreach {
-      case (x, y) => assert(x == y)
-    }
 
   }
 

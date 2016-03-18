@@ -6,8 +6,8 @@ import org.apache.spark.rdd.RDD
 
 object ICP extends Logging {
 
-  private def sampleCalibrationAndTraining(input: RDD[LabeledPoint],
-                                           numOfCalibSamples: Int) = {
+  def calibrationSplit(input: RDD[LabeledPoint],
+                       numOfCalibSamples: Int) = {
 
     //Computing the calibration fraction using binomial upper bound
     val n = input.count
@@ -35,22 +35,7 @@ object ICP extends Logging {
 
   }
 
-  def splitCalibrationAndTraining(input: RDD[LabeledPoint], numOfCalibSamples: Int,
-                                  bothClasses: Boolean = false) = {
-    if (bothClasses) {
-      //bothClasses works only for binary classification at the moment
-      val sc = input.context
-      val class0 = input.filter(_.label == 0.0)
-      val class1 = input.filter(_.label == 1.0)
-      val (calibSet0, propTraining0) = sampleCalibrationAndTraining(class0, numOfCalibSamples)
-      val (calibSet1, propTraining1) = sampleCalibrationAndTraining(class1, numOfCalibSamples)
-      (calibSet0 ++ calibSet1, sc.union(propTraining0, propTraining1))
-    } else {
-      sampleCalibrationAndTraining(input, numOfCalibSamples)
-    }
-  }
-
-  def trainClassifier[A<:UnderlyingAlgorithm](
+  def trainClassifier[A <: UnderlyingAlgorithm](
     alg: A,
     numClasses: Int,
     calibSet: Array[LabeledPoint]): ICPClassifierModel[A] = {

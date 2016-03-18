@@ -16,7 +16,7 @@ class LogisticRegressionTest extends FunSuite with SharedSparkContext {
   test("test performance") {
     val trainData = TestUtils.generateBinaryData(100, Random.nextLong)
     val testData = TestUtils.generateBinaryData(30, Random.nextLong)
-    val (calibration, properTrain) = ICP.splitCalibrationAndTraining(sc.parallelize(trainData), 16)  
+    val (calibration, properTrain) = ICP.calibrationSplit(sc.parallelize(trainData), 16)  
     val lr = new LogisticRegression(properTrain, 30)
     val model = ICP.trainClassifier(lr, numClasses=2, calibration)
     assert(TestUtils.testPerformance(model, sc.parallelize(testData)))

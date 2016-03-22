@@ -58,7 +58,7 @@ object PubChemTraining {
     val parser = new OptionParser[Params]("PubChemTraining") {
       head("PubChemTraining: training procedure for unbalanced datasets, e.g. PubChem tox.")
       opt[Int]("clSize")
-        .text("size of calibration set (for each class)")
+        .text("size of calibration set")
         .action((x, c) => c.copy(clSize = x))
       opt[Int]("nCPs")
         .text("number of CPs to train")

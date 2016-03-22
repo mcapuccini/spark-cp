@@ -47,9 +47,14 @@ object ICP extends Logging {
     val class1 = input.filter(_.label == 1.0)
     val count0 = class0.count
     val count1 = class1.count
-    val negSize = ((count0.doubleValue / (count0 + count1)) * numOfCalibSamples)
-      .ceil.toInt
-    val posSize = numOfCalibSamples - negSize
+    val posRatio = count1.doubleValue / (count0 + count1)
+    val posSize = if(numOfCalibSamples * posRatio < 19) {
+      logWarning("Raising the number of positive samples to 19 (allows sig >= 0.5)")
+      19
+    } else {
+      (numOfCalibSamples * posRatio).ceil.toInt
+    }
+    val negSize = numOfCalibSamples - posSize
     val (negSmpl, negTr) = ICP.simpleSplit(class0, negSize)
     val (posSmpl, posTr) = ICP.simpleSplit(class1, posSize)
     val properTraining = negTr ++ posTr

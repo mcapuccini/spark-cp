@@ -112,18 +112,18 @@ class ICPTest extends FunSuite with SharedSparkContext {
   
   test("stratified calibration and training split") {
     
-    val input = (1 to 100).map(
+    val input = (1 to 1000).map(
         i => new LabeledPoint(
-            if(i <= 20) 1.0 else 0.0, 
+            if(i <= 200) 1.0 else 0.0, 
             Vectors.dense(i)))
     val (calibration, trainingRDD) = ICP.calibrationSplit(
-        sc.parallelize(input), 30, stratified=true)
+        sc.parallelize(input), 300, stratified=true)
     val training = trainingRDD.collect
     val concat = calibration ++ training
-    assert(calibration.filter(_.label==1.0).length == 6)
-    assert(calibration.filter(_.label==0.0).length == 24)
-    assert(training.length == 70)
-    assert(concat.length == 100)
+    assert(calibration.filter(_.label==1.0).length == 60)
+    assert(calibration.filter(_.label==0.0).length == 240)
+    assert(training.length == 700)
+    assert(concat.length == 1000)
     concat.sortBy(_.features.toArray(0)).zip(input).foreach {
       case (x, y) => assert(x == y)
     }

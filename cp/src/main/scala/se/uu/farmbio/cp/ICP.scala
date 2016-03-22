@@ -6,8 +6,9 @@ import org.apache.spark.rdd.RDD
 
 object ICP extends Logging {
 
-  def calibrationSplit(input: RDD[LabeledPoint],
-                       numOfCalibSamples: Int) = {
+  private def simpleSplit(
+    input: RDD[LabeledPoint],
+    numOfCalibSamples: Int) = {
 
     //Computing the calibration fraction using binomial upper bound
     val n = input.count
@@ -32,6 +33,42 @@ object ICP extends Logging {
 
     val sc = input.context
     (calibration, splits(1) ++ sc.parallelize(additional))
+
+  }
+
+  private def stratifiedSplit(
+    input: RDD[LabeledPoint],
+    numOfCalibSamples: Int) = {
+
+    logWarning("Stratified sampling is supported only for binary classification.")
+    
+    //Calibration split, making sure there is some data for both classes
+    val class0 = input.filter(_.label == 0.0)
+    val class1 = input.filter(_.label == 1.0)
+    val count0 = class0.count
+    val count1 = class1.count
+    val negSize = ((count0.doubleValue / (count0 + count1)) * numOfCalibSamples)
+      .ceil.toInt
+    val posSize = numOfCalibSamples - negSize
+    val (negSmpl, negTr) = ICP.simpleSplit(class0, negSize)
+    val (posSmpl, posTr) = ICP.simpleSplit(class1, posSize)
+    val properTraining = negTr ++ posTr
+    val clalibration = negSmpl ++ posSmpl
+    (clalibration, properTraining)
+
+  }
+
+  def calibrationSplit(
+    input: RDD[LabeledPoint],
+    numOfCalibSamples: Int,
+    stratified: Boolean = false) = {
+
+    if (stratified) {
+      logWarning("Stratified sampling needs to count the dataset, you should use it wisely.")
+      ICP.stratifiedSplit(input, numOfCalibSamples)
+    } else {
+      ICP.simpleSplit(input, numOfCalibSamples)
+    }
 
   }
 

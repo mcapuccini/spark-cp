@@ -36,8 +36,7 @@ object AggregatedICPs {
     //Train icps
     val icps = (1 to params.numOfICPs).map { _ =>
       val (calibration, properTraining) =
-        ICP.splitCalibrationAndTraining(training, params.calibrationSize,
-          bothClasses = true)
+        ICP.calibrationSplit(training, params.calibrationSize)
       //Train ICP
       val gbt = new GBT(properTraining.cache, params.numIterations)
       ICP.trainClassifier(gbt, numClasses = 2, calibration)

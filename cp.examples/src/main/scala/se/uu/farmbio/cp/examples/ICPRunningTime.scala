@@ -31,7 +31,7 @@ object ICPRunningTime {
     val training = MLUtils.loadLibSVMFile(sc, params.input)
       .sample(withReplacement = false, fraction = params.inputFraction)
     val (calibration, properTraining) =
-      ICP.splitCalibrationAndTraining(training, params.calibrationSize, bothClasses = true)
+      ICP.calibrationSplit(training, params.calibrationSize)
 
     //Train ICP
     val t0 = System.currentTimeMillis

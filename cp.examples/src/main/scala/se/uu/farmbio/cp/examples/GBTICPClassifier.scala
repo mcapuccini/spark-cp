@@ -31,7 +31,7 @@ object GBTICPClassifier {
     val Array(training, test) = MLUtils.loadLibSVMFile(sc, params.input)
       .randomSplit(Array(0.8, 0.2))
     val (calibration, properTraining) =
-      ICP.splitCalibrationAndTraining(training, params.calibrationSize, bothClasses=true)
+      ICP.calibrationSplit(training, params.calibrationSize)
 
     //Train ICP
     val t0 = System.currentTimeMillis

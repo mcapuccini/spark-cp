@@ -33,7 +33,7 @@ object PubChemTraining {
     val pubchem = MLUtils.loadLibSVMFile(sc, params.trainInputPath)
 
     //Train with SVM
-    val cps = (1 to 100).map { _ =>
+    val cps = (1 to params.nCPs).map { _ =>
       //Sample calibration
       val (calibration, training) = ICP.calibrationSplit(
         pubchem,

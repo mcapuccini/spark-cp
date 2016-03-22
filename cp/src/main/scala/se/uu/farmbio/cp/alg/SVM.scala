@@ -1,16 +1,15 @@
 package se.uu.farmbio.cp.alg
 
-import org.apache.spark.mllib.classification.SVMModel
-import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.mllib.optimization.SquaredL2Updater
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.optimization.HingeGradient
-import org.apache.spark.mllib.optimization.LBFGS
-import org.apache.spark.mllib.optimization.SquaredL2Updater
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.util.MLUtils
+import se.uu.farmbio.cp.UnderlyingAlgorithmSerializer
 import org.apache.spark.rdd.RDD
-
+import org.apache.spark.mllib.classification.SVMModel
 import se.uu.farmbio.cp.UnderlyingAlgorithm
+import org.apache.spark.mllib.optimization.LBFGS
+import org.apache.spark.mllib.util.MLUtils
 
 //Define a SVMs UnderlyingAlgorithm
 private object SVM {
@@ -19,7 +18,7 @@ private object SVM {
     maxNumItearations: Int,
     regParam: Double,
     numCorrections: Int,
-    convergenceTol: Double): (Vector => Double) = {
+    convergenceTol: Double) = {
 
     //Train SVM with LBFGS
     val numFeatures = input.take(1)(0).features.size
@@ -42,30 +41,52 @@ private object SVM {
 
     //Return raw score predictor
     model.clearThreshold()
-    model.predict
+    model
 
   }
 }
 
-class SVM(
-  private val input: RDD[LabeledPoint],
-  private val maxNumItearations: Int = 100,
-  private val regParam: Double = 0.1,
-  private val numCorrections: Int = 10,
-  private val convergenceTol: Double = 1e-4)
-  extends UnderlyingAlgorithm(
-    SVM.trainingProcedure(
+class SVM(val model: SVMModel)
+  extends UnderlyingAlgorithm(model.predict) {
+
+  def this(
+    input: RDD[LabeledPoint],
+    maxNumItearations: Int = 100,
+    regParam: Double = 0.1,
+    numCorrections: Int = 10,
+    convergenceTol: Double = 1e-4) = {
+
+    this(SVM.trainingProcedure(
       input,
       maxNumItearations,
       regParam,
       numCorrections,
-      convergenceTol)) {
-  override def nonConformityMeasure(newSample: LabeledPoint) = {
+      convergenceTol))
+
+  }
+  
+  def nonConformityMeasure(newSample: LabeledPoint) = {
     val score = predictor(newSample.features)
     if (newSample.label == 1.0) {
       -score
     } else {
       score
     }
+  }
+  
+}
+
+object SVMSerializer extends UnderlyingAlgorithmSerializer[SVM] {
+  override def serialize(alg: SVM): String = {
+    alg.model.intercept + "\n" +
+      alg.model.weights.toString
+  }
+  override def deserialize(modelString: String): SVM = {
+    val rowSplitted = modelString.split("\n")
+    val intercept = rowSplitted(0)
+    val weights = rowSplitted(1)
+    val model = new SVMModel(Vectors.parse(weights).toSparse, intercept.toDouble)
+    model.clearThreshold()
+    new SVM(model)
   }
 }

@@ -10,12 +10,10 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class LogisticRegressionTest extends FunSuite with SharedSparkContext {
-  
-  Random.setSeed(11)
 
   test("test performance") {
-    val trainData = TestUtils.generateBinaryData(100, Random.nextLong)
-    val testData = TestUtils.generateBinaryData(30, Random.nextLong)
+    val trainData = TestUtils.generateBinaryData(100, 11)
+    val testData = TestUtils.generateBinaryData(30, 22)
     val (calibration, properTrain) = ICP.calibrationSplit(sc.parallelize(trainData), 16)  
     val lr = new LogisticRegression(properTrain, 30)
     val model = ICP.trainClassifier(lr, numClasses=2, calibration)

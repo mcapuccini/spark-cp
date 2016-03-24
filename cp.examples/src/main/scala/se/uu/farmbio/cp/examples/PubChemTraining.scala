@@ -23,7 +23,7 @@ object PubChemTraining {
 
     //Init Spark
     val conf = new SparkConf()
-      .setAppName("ICPRunningTime")
+      .setAppName("PubChemTraining")
     if (params.master != null) {
       conf.setMaster(params.master)
     }
@@ -40,7 +40,7 @@ object PubChemTraining {
         params.clSize,
         stratified = true)
       ICP.trainClassifier(
-        new SVM(training),
+        new SVM(training,regParam=0.0),
         numClasses = 2,
         calibration)
     }

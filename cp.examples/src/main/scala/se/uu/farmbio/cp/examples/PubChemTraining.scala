@@ -29,7 +29,7 @@ object PubChemTraining {
 
     //Init Spark
     val conf = new SparkConf()
-      .setAppName("ICPRunningTime")
+      .setAppName("PubChemTraining")
     if (params.master != null) {
       conf.setMaster(params.master)
     }
@@ -60,6 +60,9 @@ object PubChemTraining {
     //Save as aggregated ICP
     new AggregatedICPClassifier(cps)
       .save(params.outputPath, SVMSerializer)
+      
+    //Stop context
+    sc.stop
 
   }
 

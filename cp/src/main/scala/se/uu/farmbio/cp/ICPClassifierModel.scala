@@ -110,11 +110,10 @@ class AggregatedICPClassifier[A <: UnderlyingAlgorithm](
 
   override def mondrianPv(features: Vector) = {
     icps
-      .map { icp =>
+      .flatMap { icp =>
         icp.mondrianPv(features)
           .zipWithIndex
       }
-      .reduce(_ ++ _)
       .groupBy(_._2)
       .toArray
       .sortBy(_._1)

@@ -39,7 +39,7 @@ object ICPClassifierModel {
 
 }
 
-abstract class ICPClassifierModel[A <: UnderlyingAlgorithm]
+abstract class ICPClassifierModel[A <: UnderlyingAlgorithm](val alg: A)
   extends Serializable {
 
   def mondrianPv(features: Vector): Array[Double]
@@ -61,9 +61,9 @@ abstract class ICPClassifierModel[A <: UnderlyingAlgorithm]
 }
 
 private[cp] class ICPClassifierModelImpl[A <: UnderlyingAlgorithm](
-  val alg: A,
+  override val alg: A,
   private val alphas: Seq[Array[Double]])
-  extends ICPClassifierModel[A] with Logging {
+  extends ICPClassifierModel[A](alg) with Logging {
 
   override def mondrianPv(features: Vector) = {
     (0 to alphas.length - 1).map { i =>
@@ -106,7 +106,7 @@ private[cp] class ICPClassifierModelImpl[A <: UnderlyingAlgorithm](
 
 class AggregatedICPClassifier[A <: UnderlyingAlgorithm](
   val icps: Seq[ICPClassifierModel[A]])
-  extends ICPClassifierModel[A] {
+  extends ICPClassifierModel[A](icps.head.alg) {
 
   override def mondrianPv(features: Vector) = {
     icps

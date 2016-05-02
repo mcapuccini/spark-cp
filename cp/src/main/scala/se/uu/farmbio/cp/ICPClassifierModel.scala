@@ -1,43 +1,10 @@
 package se.uu.farmbio.cp
 
-import java.io.File
-import java.io.IOException
 import java.io.Serializable
-import java.nio.file.Files
-import java.nio.file.Paths
-
-import scala.io.Source
 
 import org.apache.spark.Logging
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.regression.LabeledPoint
-
-object ICPClassifierModel {
-
-  def loadICPClassifierModel[A <: UnderlyingAlgorithm](
-    inputPath: String,
-    serializer: UnderlyingAlgorithmSerializer[A]): ICPClassifierModel[A] = {
-    val algStr = Source.fromFile(s"$inputPath/alg.txt").mkString
-    val alg = serializer.deserialize(algStr)
-    val alphasStr = Source.fromFile(s"$inputPath/alphas.txt").mkString
-    val alphas = alphasStr.split("\\r?\\n")
-      .map { a =>
-        a.split(",").map(_.toDouble).toArray
-      }.toSeq
-    new ICPClassifierModelImpl[A](alg, alphas)
-  }
-  
-  def loadAggregatedICPClassifier[A <: UnderlyingAlgorithm](
-    inputPath: String,
-    serializer: UnderlyingAlgorithmSerializer[A]) = {
-    val inputFile = new File(inputPath)
-    val icps = inputFile.listFiles.map { f =>
-      loadICPClassifierModel(f.getAbsolutePath, serializer)
-    }
-    new AggregatedICPClassifier(icps)
-  }
-
-}
 
 abstract class ICPClassifierModel[A <: UnderlyingAlgorithm]
   extends Serializable {
@@ -55,8 +22,6 @@ abstract class ICPClassifierModel[A <: UnderlyingAlgorithm]
         }
     }.reduce(_ ++ _)
   }
-
-  def save(outputPath: String, serializer: UnderlyingAlgorithmSerializer[A])
 
 }
 
@@ -85,22 +50,6 @@ private[cp] class ICPClassifierModelImpl[A <: UnderlyingAlgorithm](
     }
     super.predict(features, significance)
   }
-
-  override def save(
-    outputPath: String,
-    serializer: UnderlyingAlgorithmSerializer[A]) = {
-    val dir = new File(outputPath)
-    if (dir.mkdir) {
-      val algStr = serializer.serialize(alg)
-      val alphasStr = alphas.map { a =>
-        a.map(_.toString).reduce(_ + "," + _)
-      }.reduce(_ + "\n" + _)
-      Files.write(Paths.get(s"${dir.getAbsolutePath}/alg.txt"),algStr.getBytes)
-      Files.write(Paths.get(s"${dir.getAbsolutePath}/alphas.txt"),alphasStr.getBytes)
-    } else {
-      throw new IOException(s"Imposible to crate directory $outputPath")
-    }
-  }
   
 }
 
@@ -128,20 +77,6 @@ class AggregatedICPClassifier[A <: UnderlyingAlgorithm](
           }
           median
       }
-  }
-
-  override def save(
-    outputPath: String,
-    serializer: UnderlyingAlgorithmSerializer[A]) = {
-    val dir = new File(outputPath)
-    if (dir.mkdir) {
-      icps.zipWithIndex.foreach {
-        case (icp, i) =>
-          icp.save(dir.getAbsolutePath + s"/icp$i", serializer)
-      }
-    } else {
-      throw new IOException(s"Imposible to crate directory $outputPath")
-    }
   }
 
 }

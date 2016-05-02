@@ -25,43 +25,6 @@ class LibLinearTest extends FunSuite with SharedSparkContext {
   val calib = SVMSuite.generateSVMInput(intercept, weights, 20, Random.nextInt)
   val test = SVMSuite.generateSVMInput(intercept, weights, 30, Random.nextInt)
 
-  test("save/load LibLinAlg") {
-    
-    //Train
-    val alg = new LibLinAlg(training.toArray,
-      SolverType.L2R_L2LOSS_SVC_DUAL,
-      regParam = 1.0,
-      tol = 0.01)
-    val model = ICP.trainClassifier(alg, numClasses = 2, calib.toArray)
-
-    //Create tmpdir
-    val tmpBase = FileUtils.getTempDirectory.getAbsolutePath
-    val tmpDir = new File(s"$tmpBase/icptest${System.currentTimeMillis}")
-    tmpDir.mkdir
-
-    //Save to disk and load couple of times
-    val serializer = LibLinAlgSerializer
-    model.save(s"$tmpDir/firstModel", serializer)
-    val model2 = ICPClassifierModel.loadICPClassifierModel(s"$tmpDir/firstModel", serializer)
-    model2.save(s"$tmpDir/secondModel", LibLinAlgSerializer)
-    val model3 = ICPClassifierModel.loadICPClassifierModel(s"$tmpDir/secondModel", serializer)
-
-    //Perform test
-    val significance = 0.2
-    test.foreach { lp =>
-      assert(
-        model.predict(lp.features, significance).equals(
-          model2.predict(lp.features, significance)) &&
-          model.predict(lp.features, significance).equals(
-            model3.predict(lp.features, significance)),
-        "make sure that the non-saved and the loaded models make the same predictions")
-    }
-
-    //Delete tmpdir
-    FileUtils.deleteDirectory(tmpDir)
-
-  }
-
   test("test private utilities") {
 
     //Generate test

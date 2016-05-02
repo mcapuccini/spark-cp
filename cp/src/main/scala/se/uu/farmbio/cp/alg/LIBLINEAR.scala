@@ -45,7 +45,7 @@ class LibLinAlg(
 
 object LibLinAlgSerializer extends UnderlyingAlgorithmSerializer[LibLinAlg] {
   override def serialize(alg: LibLinAlg): String = {
-    alg.svmModel.intercept + "\n" +
+    alg.svmModel.intercept + "," +
       alg.svmModel.weights.toString
   }
   override def deserialize(modelString: String): LibLinAlg = {

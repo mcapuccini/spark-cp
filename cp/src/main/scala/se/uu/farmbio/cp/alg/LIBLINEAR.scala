@@ -17,7 +17,6 @@ import de.bwaldvogel.liblinear.SolverType
 import se.uu.farmbio.cp.AggregatedICPClassifier
 import se.uu.farmbio.cp.ICP
 import se.uu.farmbio.cp.UnderlyingAlgorithm
-import se.uu.farmbio.cp.UnderlyingAlgorithmSerializer
 
 class LibLinAlg(
   val svmModel: SVMModel)
@@ -41,21 +40,6 @@ class LibLinAlg(
     }
   }
 
-}
-
-object LibLinAlgSerializer extends UnderlyingAlgorithmSerializer[LibLinAlg] {
-  override def serialize(alg: LibLinAlg): String = {
-    alg.svmModel.intercept + "," +
-      alg.svmModel.weights.toString
-  }
-  override def deserialize(modelString: String): LibLinAlg = {
-    val rowSplitted = modelString.split("\n")
-    val intercept = rowSplitted(0)
-    val weights = rowSplitted(1)
-    val model = new SVMModel(Vectors.parse(weights).toSparse, intercept.toDouble)
-    model.clearThreshold()
-    new LibLinAlg(model)
-  }
 }
 
 object LIBLINEAR {

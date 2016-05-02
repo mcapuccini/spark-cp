@@ -1,6 +1,5 @@
 package se.uu.farmbio.cp.alg
 
-import scala.util.Random
 import org.apache.spark.SharedSparkContext
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite

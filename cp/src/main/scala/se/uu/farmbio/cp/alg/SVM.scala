@@ -1,15 +1,15 @@
 package se.uu.farmbio.cp.alg
 
-import org.apache.spark.mllib.optimization.SquaredL2Updater
+import org.apache.spark.mllib.classification.SVMModel
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.optimization.HingeGradient
-import org.apache.spark.mllib.regression.LabeledPoint
-import se.uu.farmbio.cp.UnderlyingAlgorithmSerializer
-import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.classification.SVMModel
-import se.uu.farmbio.cp.UnderlyingAlgorithm
 import org.apache.spark.mllib.optimization.LBFGS
+import org.apache.spark.mllib.optimization.SquaredL2Updater
+import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.rdd.RDD
+
+import se.uu.farmbio.cp.UnderlyingAlgorithm
 
 //Define a SVMs UnderlyingAlgorithm
 private object SVM {
@@ -74,19 +74,4 @@ class SVM(val model: SVMModel)
     }
   }
   
-}
-
-object SVMSerializer extends UnderlyingAlgorithmSerializer[SVM] {
-  override def serialize(alg: SVM): String = {
-    alg.model.intercept + "\n" +
-      alg.model.weights.toString
-  }
-  override def deserialize(modelString: String): SVM = {
-    val rowSplitted = modelString.split("\n")
-    val intercept = rowSplitted(0)
-    val weights = rowSplitted(1)
-    val model = new SVMModel(Vectors.parse(weights).toSparse, intercept.toDouble)
-    model.clearThreshold()
-    new SVM(model)
-  }
 }

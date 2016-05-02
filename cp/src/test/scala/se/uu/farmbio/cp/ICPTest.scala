@@ -3,15 +3,12 @@ package se.uu.farmbio.cp
 import org.apache.spark.SharedSparkContext
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.commons.io.FileUtils
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.junit.runner.RunWith
 import scala.util.Random
-import java.io.File
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-
 private[cp] object OneNNClassifier {
   def createModel(training: Array[LabeledPoint]) = (features: Vector) => {
     val classAndDist = training.map(point =>
@@ -43,29 +40,6 @@ private[cp] class OneNNClassifier(
         .sorted
       distances.sum / filtTrain.length
     }
-  }
-
-}
-
-private[cp] class OneNNClassifierSerializer
-  extends UnderlyingAlgorithmSerializer[OneNNClassifier] {
-
-  override def serialize(oneNN: OneNNClassifier) = {
-    oneNN.training.map { p =>
-      s"${p.label}," +
-        p.features.toArray.map(_.toString).reduce(_ + "," + _)
-    }.reduce(_ + "\n" + _)
-  }
-
-  override def deserialize(oneNNstr: String) = {
-    val training = oneNNstr.split("\\n").map { line =>
-      val doubles = line.split(",").map(_.toDouble)
-      val label = doubles(0)
-      val features = Vectors.dense(doubles.takeRight(doubles.length - 1))
-      new LabeledPoint(label, features)
-    }
-    val model = OneNNClassifier.createModel(training)
-    new OneNNClassifier(model, training)
   }
 
 }

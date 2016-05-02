@@ -1,15 +1,12 @@
 package se.uu.farmbio.cp.alg
 
-import java.io.File
 import scala.util.Random
-import org.apache.commons.io.FileUtils
 import org.apache.spark.SharedSparkContext
 import org.apache.spark.mllib.classification.SVMSuite
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import de.bwaldvogel.liblinear.SolverType
 import se.uu.farmbio.cp.ICP
-import se.uu.farmbio.cp.ICPClassifierModel
 import se.uu.farmbio.cp.TestUtils
 import org.scalatest.junit.JUnitRunner
 

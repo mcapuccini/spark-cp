@@ -51,6 +51,16 @@ private[cp] class ICPClassifierModelImpl[A <: UnderlyingAlgorithm](
     super.predict(features, significance)
   }
   
+  override def toString = {
+    val algStr = alg.toString
+    val alphStr = alphas
+      .map(mpv => 
+        "("+ mpv.map(_.toString).reduce(_+","+_)+")")
+      .reduce(_+","+_)
+    s"[$algStr],[$alphStr]"
+    
+  }
+  
 }
 
 class AggregatedICPClassifier[A <: UnderlyingAlgorithm](

@@ -9,6 +9,9 @@ import org.junit.runner.RunWith
 import scala.util.Random
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
+import org.scalatest.mock.MockitoSugar
+import org.mockito.Mockito._
+
 private[cp] object OneNNClassifier {
   def createModel(training: Array[LabeledPoint]) = (features: Vector) => {
     val classAndDist = training.map(point =>
@@ -45,7 +48,7 @@ private[cp] class OneNNClassifier(
 }
 
 @RunWith(classOf[JUnitRunner])
-class ICPTest extends FunSuite with SharedSparkContext {
+class ICPTest extends FunSuite with SharedSparkContext with MockitoSugar {
 
   Random.setSeed(11)
 
@@ -163,6 +166,21 @@ class ICPTest extends FunSuite with SharedSparkContext {
     val valBySig = effAndErrBySig.map(t => (t._1, t._5))
     assert(metrics.validityBySignificance sameElements valBySig)
 
+  }
+  
+  test("model to string") {
+    
+    val model = mock[OneNNClassifier]
+    when(model.toString).thenReturn("1.0,2.0")
+    val icp = new ICPClassifierModelImpl(model,Seq(
+      Array(0.1,0.2,0.3),
+      Array(0.3,0.2,0.1),
+      Array(0.2,0.1,0.3)
+    ))
+
+    assert(icp.toString == 
+      "[1.0,2.0],[(0.1,0.2,0.3),(0.3,0.2,0.1),(0.2,0.1,0.3)]")
+    
   }
 
 }

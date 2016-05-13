@@ -11,7 +11,8 @@ object ICPClassifierModel {
       model: String, 
       algDeserializer: Deserializer[A]): ICPClassifierModel[A] = {
     
-    val matches = "\\[(.*?)\\]".r
+    //If curly brackets are used in the  algorithm serialization this won't work
+    val matches = "\\{(.*?)\\}".r 
       .findAllMatchIn(model)
       .map(_.matched)
       .toArray
@@ -84,7 +85,7 @@ private[cp] class ICPClassifierModelImpl[A <: UnderlyingAlgorithm](
       .map(mpv => 
         "("+ mpv.map(_.toString).reduce(_+","+_)+")")
       .reduce(_+","+_)
-    s"[$algStr],[$alphStr]"
+    s"{$algStr},{$alphStr}"
     
   }
   

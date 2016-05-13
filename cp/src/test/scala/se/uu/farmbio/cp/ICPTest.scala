@@ -171,7 +171,7 @@ class ICPTest extends FunSuite with SharedSparkContext with MockitoSugar {
   test("serialize/deserialize icp") {
 
     //Mocks
-    val serialICP = "[1.0,2.0],[(0.1,0.2,0.3),(0.3,0.2,0.1),(0.2,0.1,0.3)]"
+    val serialICP = "{1.0,2.0},{(0.1,0.2,0.3),(0.3,0.2,0.1),(0.2,0.1,0.3)}"
     val alphas = Seq(
       Array(0.1, 0.2, 0.3),
       Array(0.3, 0.2, 0.1),
@@ -181,8 +181,7 @@ class ICPTest extends FunSuite with SharedSparkContext with MockitoSugar {
 
     //Test serialization
     val icp = new ICPClassifierModelImpl(model, alphas)
-    assert(icp.toString ==
-      "[1.0,2.0],[(0.1,0.2,0.3),(0.3,0.2,0.1),(0.2,0.1,0.3)]")
+    assert(icp.toString == serialICP)
 
     //Test deserialization
     val algDeserializer = mock[Deserializer[UnderlyingAlgorithm]]

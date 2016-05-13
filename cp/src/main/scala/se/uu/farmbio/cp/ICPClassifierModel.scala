@@ -7,9 +7,9 @@ import org.apache.spark.mllib.regression.LabeledPoint
 
 object ICPClassifierModel {
   
-  def deserialize(
+  def deserialize[A <: UnderlyingAlgorithm](
       model: String, 
-      algDeserializer: Deserializer[UnderlyingAlgorithm]) = {
+      algDeserializer: Deserializer[A]): ICPClassifierModel[A] = {
     
     val matches = "\\[(.*?)\\]".r
       .findAllMatchIn(model)
@@ -28,7 +28,7 @@ object ICPClassifierModel {
           .split(",")
           .map(_.toDouble)
       }.toSeq
-      new ICPClassifierModelImpl(alg,alph)     
+      new ICPClassifierModelImpl(alg,alph)
   }
   
 }

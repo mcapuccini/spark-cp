@@ -189,6 +189,7 @@ class ICPTest extends FunSuite with SharedSparkContext with MockitoSugar {
     when(algDeserializer.deserialize("1.0,2.0"))
       .thenReturn(model)
     val parsedICP = ICPClassifierModel.deserialize(serialICP, algDeserializer)
+      .asInstanceOf[ICPClassifierModelImpl[UnderlyingAlgorithm]]
     assert(parsedICP.alg.toString == "1.0,2.0")
     assert(parsedICP.alphas.toArray.deep == alphas.toArray.deep)
 

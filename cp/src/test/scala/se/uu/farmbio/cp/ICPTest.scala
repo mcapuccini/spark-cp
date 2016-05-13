@@ -23,10 +23,10 @@ private[cp] object OneNNClassifier {
 
 //this will not work for big input RDDs, however this is just for testing purpose
 private[cp] class OneNNClassifier(
-    val model: Vector => Double,
-    val training: Array[LabeledPoint])
+  val model: Vector => Double,
+  val training: Array[LabeledPoint])
   extends UnderlyingAlgorithm(model) {
-  
+
   def this(input: RDD[LabeledPoint]) = {
     this(OneNNClassifier.createModel(input.collect), input.collect)
   }
@@ -86,25 +86,25 @@ class ICPTest extends FunSuite with SharedSparkContext with MockitoSugar {
     }
 
   }
-  
+
   test("stratified calibration and training split") {
-    
+
     val input = (1 to 1000).map(
-        i => new LabeledPoint(
-            if(i <= 200) 1.0 else 0.0, 
-            Vectors.dense(i)))
+      i => new LabeledPoint(
+        if (i <= 200) 1.0 else 0.0,
+        Vectors.dense(i)))
     val (calibration, trainingRDD) = ICP.calibrationSplit(
-        sc.parallelize(input), 300, stratified=true)
+      sc.parallelize(input), 300, stratified = true)
     val training = trainingRDD.collect
     val concat = calibration ++ training
-    assert(calibration.filter(_.label==1.0).length == 60)
-    assert(calibration.filter(_.label==0.0).length == 240)
+    assert(calibration.filter(_.label == 1.0).length == 60)
+    assert(calibration.filter(_.label == 0.0).length == 240)
     assert(training.length == 700)
     assert(concat.length == 1000)
     concat.sortBy(_.features.toArray(0)).zip(input).foreach {
       case (x, y) => assert(x == y)
     }
-    
+
   }
 
   test("aggregated ICPs classification") {
@@ -167,20 +167,31 @@ class ICPTest extends FunSuite with SharedSparkContext with MockitoSugar {
     assert(metrics.validityBySignificance sameElements valBySig)
 
   }
-  
-  test("model to string") {
-    
-    val model = mock[OneNNClassifier]
-    when(model.toString).thenReturn("1.0,2.0")
-    val icp = new ICPClassifierModelImpl(model,Seq(
-      Array(0.1,0.2,0.3),
-      Array(0.3,0.2,0.1),
-      Array(0.2,0.1,0.3)
-    ))
 
-    assert(icp.toString == 
+  test("serialize/deserialize icp") {
+
+    //Mocks
+    val serialICP = "[1.0,2.0],[(0.1,0.2,0.3),(0.3,0.2,0.1),(0.2,0.1,0.3)]"
+    val alphas = Seq(
+      Array(0.1, 0.2, 0.3),
+      Array(0.3, 0.2, 0.1),
+      Array(0.2, 0.1, 0.3))
+    val model = mock[UnderlyingAlgorithm]
+    when(model.toString).thenReturn("1.0,2.0")
+
+    //Test serialization
+    val icp = new ICPClassifierModelImpl(model, alphas)
+    assert(icp.toString ==
       "[1.0,2.0],[(0.1,0.2,0.3),(0.3,0.2,0.1),(0.2,0.1,0.3)]")
-    
+
+    //Test deserialization
+    val algDeserializer = mock[Deserializer[UnderlyingAlgorithm]]
+    when(algDeserializer.deserialize("1.0,2.0"))
+      .thenReturn(model)
+    val parsedICP = ICPClassifierModel.deserialize(serialICP, algDeserializer)
+    assert(parsedICP.alg.toString == "1.0,2.0")
+    assert(parsedICP.alphas.toArray.deep == alphas.toArray.deep)
+
   }
 
 }

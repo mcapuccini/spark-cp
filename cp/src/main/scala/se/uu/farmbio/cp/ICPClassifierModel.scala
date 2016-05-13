@@ -1,10 +1,37 @@
 package se.uu.farmbio.cp
 
 import java.io.Serializable
-
 import org.apache.spark.Logging
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.regression.LabeledPoint
+
+object ICPClassifierModel {
+  
+  def deserialize(
+      model: String, 
+      algDeserializer: Deserializer[UnderlyingAlgorithm]) = {
+    
+    val matches = "\\[(.*?)\\]".r
+      .findAllMatchIn(model)
+      .map(_.matched)
+      .toArray
+    if(matches.length != 2) {
+      throw new IllegalArgumentException("malformed model string")
+    }
+    val algStr = matches(0).substring(1, matches(0).length-1)
+    val alg = algDeserializer.deserialize(algStr)
+    val alphStr = matches(1).substring(1, matches(1).length-1)
+    val alph = "\\(([-+]?[0-9]*\\.?[0-9]+,)*[-+]?[0-9]*\\.?[0-9]+\\)".r
+      .findAllMatchIn(alphStr).map{ pairMatch => 
+        val pairStr = pairMatch.matched
+        pairStr.substring(1,pairStr.length-1)
+          .split(",")
+          .map(_.toDouble)
+      }.toSeq
+      new ICPClassifierModelImpl(alg,alph)     
+  }
+  
+}
 
 abstract class ICPClassifierModel[A <: UnderlyingAlgorithm]
   extends Serializable {
@@ -27,7 +54,7 @@ abstract class ICPClassifierModel[A <: UnderlyingAlgorithm]
 
 private[cp] class ICPClassifierModelImpl[A <: UnderlyingAlgorithm](
   val alg: A,
-  private val alphas: Seq[Array[Double]])
+  val alphas: Seq[Array[Double]])
   extends ICPClassifierModel[A] with Logging {
 
   override def mondrianPv(features: Vector) = {

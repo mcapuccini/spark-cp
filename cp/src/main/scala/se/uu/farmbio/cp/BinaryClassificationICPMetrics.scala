@@ -4,8 +4,8 @@ import org.apache.spark.Logging
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
-private object BinaryClassificationICPMetrics extends Logging {
-  def allSignificances(
+object BinaryClassificationICPMetrics extends Logging {
+  private def allSignificances(
     mondrianPvAndLabels: RDD[(Array[Double], Double)]) = {
     logWarning("all possible significances will be considered. " +
         "Make sure you know what you are doing.")

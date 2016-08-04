@@ -8,21 +8,21 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.SparkContext
 
 object AggregatedICPClassifier {
-  
+
   def load(path: String, sc: SparkContext) = {
     val icps = sc.textFile(path)
-      .map(ICPClassifierModel.deserialize(_, LibLinAlgDeserializer)) 
+      .map(ICPClassifierModel.deserialize(_, LibLinAlgDeserializer))
     new AggregatedICPClassifier(icps)
   }
-  
+
 }
 
 class AggregatedICPClassifier(
   private val icps: RDD[ICPClassifierModel[LibLinAlg]])
   extends ICPClassifierModel[LibLinAlg] {
-  
+
   val cachedICPs = icps.cache
-  
+
   override def mondrianPv(features: Vector) = {
     cachedICPs
       .flatMap { icp =>
@@ -45,10 +45,13 @@ class AggregatedICPClassifier(
           median
       }
   }
-  
-  def save(path: String) = {
-    cachedICPs.map(_.toString)
-      .saveAsTextFile(path)
+
+  def save(path: String, coalesce: Int = 0) = {
+    var serialICPs = cachedICPs.map(_.toString)
+    if (coalesce > 0) {
+      serialICPs = serialICPs.coalesce(coalesce)
+    }
+    serialICPs.saveAsTextFile(path)
   }
 
 }

@@ -13,6 +13,7 @@ object LibLinearTraining {
     outputPath: String = null,
     calibrRatio: Double = 0.2,
     numberOfCPs: Int = 100,
+    nofOutFiles: Int = 0,
     master: String = null)
   
   def main(args: Array[String]) = {
@@ -30,6 +31,11 @@ object LibLinearTraining {
       opt[String]("master")
         .text("spark master")
         .action((x, c) => c.copy(master = x))
+      opt[Int]("nofOutFiles")
+        .text("Number of output files. " + 
+            "It can be equal to the parallelism level at most " + 
+            "(defualt: as much as the parallelism level)")
+        .action((x, c) => c.copy(nofOutFiles = x))
       arg[String]("<input>")
         .required()
         .text("input path to training examples in LIBSVM format")
@@ -73,7 +79,7 @@ object LibLinearTraining {
         params.numberOfCPs)
         
     //Save the model in a distributed fashion 
-    modelData.save(params.outputPath)
+    modelData.save(params.outputPath, params.nofOutFiles)
     
     //Stop Spark
     sc.stop

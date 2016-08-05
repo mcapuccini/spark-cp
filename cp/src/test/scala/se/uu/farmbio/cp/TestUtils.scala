@@ -53,8 +53,8 @@ object TestUtils {
     model: ICPClassifierModel[T],
     test: RDD[LabeledPoint],
     sig: Double = 0.2,
-    minEff: Double = 0.7,
-    minRec: Double = 0.7) = {
+    minEff: Double = 0.6,
+    minRec: Double = 0.6) = {
     val pvAndLab = test.map { p =>
       (model.mondrianPv(p.features), p.label)
     }

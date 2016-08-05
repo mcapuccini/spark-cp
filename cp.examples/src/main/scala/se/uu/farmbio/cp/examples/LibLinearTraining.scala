@@ -5,8 +5,9 @@ import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import se.uu.farmbio.cp.liblinear.LIBLINEAR
 import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.Logging
 
-object LibLinearTraining {
+object LibLinearTraining extends Logging {
   
   case class Params(
     trainInputPath: String = null,
@@ -64,6 +65,10 @@ object LibLinearTraining {
       conf.setMaster(params.master)
     }
     val sc = new SparkContext(conf)
+    
+    //Log block size
+    val blockSize = sc.hadoopConfiguration.get("dfs.block.size")
+    logInfo(s"dfs.block.size = $blockSize")
     
     //Load data
     //This example assumes the training set to be relatively small

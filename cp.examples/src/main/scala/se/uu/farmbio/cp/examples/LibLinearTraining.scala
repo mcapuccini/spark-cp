@@ -15,6 +15,7 @@ object LibLinearTraining extends Logging {
     calibrRatio: Double = 0.2,
     numberOfCPs: Int = 100,
     nofOutFiles: Int = 0,
+    dfsBlockSize: String = "8M",
     master: String = null)
   
   def main(args: Array[String]) = {
@@ -37,6 +38,9 @@ object LibLinearTraining extends Logging {
             "It can be equal to the parallelism level at most " + 
             "(defualt: as much as the parallelism level)")
         .action((x, c) => c.copy(nofOutFiles = x))
+      opt[String]("dfsBlockSize")
+        .text("It tunes the Hadoop dfs.block.size property (default:8M)")
+        .action((x, c) => c.copy(dfsBlockSize = x))
       arg[String]("<input>")
         .required()
         .text("input path to training examples in LIBSVM format")
@@ -66,7 +70,8 @@ object LibLinearTraining extends Logging {
     }
     val sc = new SparkContext(conf)
     
-    //Log block size
+    //Set and log dfs.block.size
+    sc.hadoopConfiguration.set("dfs.block.size", params.dfsBlockSize)
     val blockSize = sc.hadoopConfiguration.get("dfs.block.size")
     logInfo(s"dfs.block.size = $blockSize")
     

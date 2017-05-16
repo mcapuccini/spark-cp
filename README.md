@@ -1,3 +1,5 @@
+:warning: **This repository is no longer maintained, please use this instead:** https://github.com/mcapuccini/scala-cp/
+
 # Conformal Prediction in Spark
 
 Increasing size of datasets is challenging for machine learning, and Big Data frameworks, such as Apache Spark, have shown promise for facilitating model building on distributed resources. Conformal prediction is a mathematical framework that allows to assign valid confidence levels to object-specific predictions. This contrasts to current best-practices where the overall confidence level for predictions on unseen objects is estimated basing on previous performance, assuming exchangeability. This repository contains a Spark-based distributed implementation of conformal prediction, which introduces valid confidence estimation in predictive modeling for Big Data analytics.

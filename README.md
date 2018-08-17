@@ -9,7 +9,7 @@ Increasing size of datasets is challenging for machine learning, and Big Data fr
 Conformal prediction is a mathematical framework that allows to assign valid confidence levels to object-specific predictions. This contrasts to current best-practices (e.g. cross-validation) where the overall confidence level for predictions on unseen objects is estimated basing on previous performance, assuming exchangeability. Given a user-specified significance level 𝜺, instead of producing a single prediction, a conformal predictor outputs a prediction set of outcomes. The major advantage of this approach is that, within the mathematical framework, there is proof that the true outcome for an unseen object will be in the prediction set with probability 1 - 𝜺.
 
 ### Nonconformity measure
-The nonconformity measure is the core of the the Conformal Predictor theory. It is a user-defined function which assigns a strangeness measure to new examples, with respect to the examples that were used in order to train a machine learning model. 
+The nonconformity measure is the core of the Conformal Predictor theory. It is a user-defined function which assigns a strangeness measure to new examples, with respect to the examples that were used in order to train a machine learning model. 
 
 ## Getting started 
 First, you need to setup a Spark project with maven, this tutorial is a good starting point:
